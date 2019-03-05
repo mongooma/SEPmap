@@ -103,6 +103,7 @@ def generate_graph(dictionary):
 if __name__ == "__main__":
 
 	entries = extract()
+	print(len(set(entries))) # 1633 entries - one missing "entries/epistemic-injustice/"
 	# iteratively browse the child entries and get all the page
 	#download_pages(entries) # to ./pages
 	
@@ -118,8 +119,8 @@ if __name__ == "__main__":
 	#link_formation_related(entries, dictionary)
 			# and make use of the "related entries" at the bottom of the page
 	#pkl.dump(dictionary, open("./dic.pkl", 'wb'), protocol=2)
-	dictionary = pkl.load(open("./dic.pkl", 'rb'))
-	generate_graph(dictionary)
+	#dictionary = pkl.load(open("./dic.pkl", 'rb'))
+	#generate_graph(dictionary)
 
 
 
