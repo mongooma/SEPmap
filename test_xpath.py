@@ -6,10 +6,28 @@ try:
 except ImportError:
     from io import StringIO
 
+import re
 
-t = lxml.html.fromstring(open("mainpage.html").read()) # 
+t = lxml.html.fromstring(open("pages/abrabanel.txt").read()) # 
 
-print(t.xpath("/html/body/div/div[3]/ul[*]/li[*]/ul/li[*]/a/@href"))
 
-entries = t.xpath("/html/body/div/div[3]/ul[*]/li[*]/ul/li[*]/a/@href") + t.xpath("/html/body/div/div[3]/ul[*]/li[*]/a@href")
+content = t.xpath('''//p''')
+
+for c in content: 
+	c = re.sub(r'\\n', ' ', c.text_content())
+	with open("log.txt", "a") as f:
+		f.write(str(c) + '\n')
+
+
+# print(content)
+
+
+# for c in content:
+# 	try:
+# 		txt = re.sub("\n", ' ', c.text)
+# 		raw_words = re.findall(r"[\w|-]+", txt) # words & hyphens	
+# 	except:
+# 		pass
+# 	print(raw_words[:10])
+
 

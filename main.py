@@ -14,7 +14,9 @@ from time import sleep
 import sys
 import nltk
 from nltk.stem import WordNetLemmatizer
-
+import re
+import pickle as pkl
+import networkx as nx
 
 
 def extract():
@@ -40,44 +42,86 @@ def download(e):
 			f.write(str(content))
 		sleep(1/float(100))
 	except:
-		print("%s\n" % e, file=sys.stderr)
+		print("download:%s\n" % e, file=sys.stderr)
 
 	return
 
 def download_pages(entries):
 	pool = Pool(processes = 5)
-	for i in range(1200, len(entries), 100):
+	for i in range(0, len(entries), 100):
 		pool.map(download, entries[i:i + 100])
 		print("%s/%s\n" % (i,  len(entries)))
 	pool.join()
 	pool.close()
 
-def user_tokenize(entries):
-	#wnl = WordNetLemmatizer()
-	with open("./pages/%s.txt" % e.split('/')[-2], 'w') as f:
-		content = f.read()
-		nltk.word_tokenize()
+def get_raw_words(entries):
+	'''
+	(not tokenizing!)
+	'''
+	for e in entries:
+		try:
+			with open("./pages/%s.txt" % e.split('/')[-2]) as f1, \
+				 open("./raw_words/%s.txt" % e.split('/')[-2], 'w') as f2:
+				t = lxml.html.fromstring(f1.read())
+				content = t.xpath('''//p''')
+				for c in content:
+					c = re.sub(r'\\n', ' ', c.text_content())
+					raw_words = re.findall(r"[\w|-]+", c) # words & hyphens
+					for w in raw_words:
+						f2.write(str(w) + '\n')
+		except:
+			print("get_raw_words:%s\n" % e, file=sys.stderr)
 
+	return 
 
+def link_formation_related(entries, dictionary):
+	'''
+	Only extract the "related entries" at the bottom of the page
+	'''
+	for e in entries:
+		key = e.split('/')[-2]
+		try:
+			with open("./pages/%s.txt" % e.split('/')[-2]) as f1:
+				t = lxml.html.fromstring(f1.read())
+				content = t.xpath('''//div[@id="related-entries"]/p[*]/a/@href''') 
+				for c in content:
+					#print(c)
+					dictionary.setdefault(key, [])
+					dictionary[key].append(c.split('/')[-2])
+		except:
+			print("link_formation_related:%s\n" % e, file=sys.stderr)
 
-		
+def generate_graph(dictionary):
+	'''
+	Using networkx;
+	node name as entry name
+	'''
+	g = nx.from_dict_of_lists(dictionary, create_using=nx.Graph())
+	nx.write_edgelist(g, "./graph.csv", comments='#', delimiter=',', data=True, encoding='utf-8')
+
 
 if __name__ == "__main__":
 
 	entries = extract()
 	# iteratively browse the child entries and get all the page
-	download_pages(entries) # to ./pages
+	#download_pages(entries) # to ./pages
 	
 	# generate links
 		# tokenize for each page
-	user_tokenize(entries)
+	#get_raw_words(entries)
 			# get rid of the high-frequency words (is, a, and...)
 				# compare with wordnet result (keep the above average ones)
 			# generate a dictionary for each entry
 
 		# cross-ref the entries to form links
-	link_formation(entries)
+	#dictionary = dict()
+	#link_formation_related(entries, dictionary)
 			# and make use of the "related entries" at the bottom of the page
+	#pkl.dump(dictionary, open("./dic.pkl", 'wb'), protocol=2)
+	dictionary = pkl.load(open("./dic.pkl", 'rb'))
+	generate_graph(dictionary)
+
+
 
 
 
